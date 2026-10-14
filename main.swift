@@ -10,6 +10,23 @@ import ServiceManagement
 
 private let defaults = UserDefaults.standard
 
+enum Language: String, CaseIterable {
+    case zh, en
+
+    var displayName: String { self == .zh ? "繁體中文" : "English" }
+
+    static var current: Language {
+        get {
+            if let raw = defaults.string(forKey: "language"), let lang = Language(rawValue: raw) { return lang }
+            return Locale.preferredLanguages.first?.hasPrefix("zh") == true ? .zh : .en
+        }
+        set { defaults.set(newValue.rawValue, forKey: "language") }
+    }
+}
+
+/// Picks the string for the current menu language.
+private func L(_ zh: String, _ en: String) -> String { Language.current == .zh ? zh : en }
+
 final class DesktopWindow: NSWindow {
     init(screen: NSScreen, player: AVPlayer) {
         super.init(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
@@ -43,9 +60,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var statusItem: NSStatusItem!
     private let stateItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-    private let playPauseItem = NSMenuItem(title: "暫停", action: #selector(togglePause), keyEquivalent: "p")
-    private let batteryItem = NSMenuItem(title: "用電池時暫停", action: #selector(toggleBattery), keyEquivalent: "")
-    private let loginItem = NSMenuItem(title: "開機時啟動", action: #selector(toggleLogin), keyEquivalent: "")
+    private let chooseItem = NSMenuItem(title: "", action: #selector(chooseVideo), keyEquivalent: "o")
+    private let playPauseItem = NSMenuItem(title: "", action: #selector(togglePause), keyEquivalent: "p")
+    private let batteryItem = NSMenuItem(title: "", action: #selector(toggleBattery), keyEquivalent: "")
+    private let loginItem = NSMenuItem(title: "", action: #selector(toggleLogin), keyEquivalent: "")
+    private let languageItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+    private let quitItem = NSMenuItem(title: "", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
 
     private var userPaused = false
     private var screensAsleep = false
@@ -96,13 +116,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func pauseReason() -> String? {
-        if looper == nil { return "尚未選擇影片" }
-        if userPaused { return "手動暫停" }
-        if screenLocked || sessionInactive { return "螢幕已鎖定" }
-        if screensAsleep { return "螢幕休眠" }
-        if ProcessInfo.processInfo.isLowPowerModeEnabled { return "低耗電模式" }
-        if pauseOnBattery && onBattery { return "使用電池中" }
-        if !windows.contains(where: { $0.occlusionState.contains(.visible) }) { return "桌面被遮住" }
+        if looper == nil { return L("尚未選擇影片", "no video selected") }
+        if userPaused { return L("手動暫停", "paused manually") }
+        if screenLocked || sessionInactive { return L("螢幕已鎖定", "screen locked") }
+        if screensAsleep { return L("螢幕休眠", "display asleep") }
+        if ProcessInfo.processInfo.isLowPowerModeEnabled { return L("低耗電模式", "Low Power Mode") }
+        if pauseOnBattery && onBattery { return L("使用電池中", "on battery") }
+        if !windows.contains(where: { $0.occlusionState.contains(.visible) }) { return L("桌面被遮住", "desktop covered") }
         return nil
     }
 
@@ -113,10 +133,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else if player.rate != 0 {
             player.pause()
         }
-        let state = reason.map { "已暫停：\($0)" } ?? "播放中"
+        let state = reason.map { L("已暫停：\($0)", "Paused: \($0)") } ?? L("播放中", "Playing")
         if state != stateItem.title { NSLog("LiteWallpaper %@", state) }
         stateItem.title = state
-        playPauseItem.title = userPaused ? "播放" : "暫停"
+        chooseItem.title = L("選擇影片…", "Choose Video…")
+        playPauseItem.title = userPaused ? L("播放", "Play") : L("暫停", "Pause")
+        batteryItem.title = L("用電池時暫停", "Pause on Battery")
+        loginItem.title = L("開機時啟動", "Launch at Login")
+        languageItem.title = L("語言", "Language")
+        languageItem.submenu?.items.forEach { $0.state = $0.representedObject as? String == Language.current.rawValue ? .on : .off }
+        quitItem.title = L("結束", "Quit")
         batteryItem.state = pauseOnBattery ? .on : .off
         loginItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
     }
@@ -193,14 +219,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stateItem.isEnabled = false
         menu.addItem(stateItem)
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "選擇影片…", action: #selector(chooseVideo), keyEquivalent: "o"))
+        menu.addItem(chooseItem)
         menu.addItem(playPauseItem)
         menu.addItem(batteryItem)
         menu.addItem(loginItem)
+        menu.addItem(languageItem)
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "結束", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        menu.addItem(quitItem)
         menu.items.forEach { $0.target = $0.action == #selector(NSApplication.terminate(_:)) ? nil : self }
+
+        let languages = NSMenu()
+        for lang in Language.allCases {
+            let item = NSMenuItem(title: lang.displayName, action: #selector(chooseLanguage(_:)), keyEquivalent: "")
+            item.representedObject = lang.rawValue
+            item.target = self
+            languages.addItem(item)
+        }
+        languageItem.submenu = languages
         statusItem.menu = menu
+    }
+
+    @objc private func chooseLanguage(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let lang = Language(rawValue: raw) else { return }
+        Language.current = lang
+        update()
     }
 
     @objc private func chooseVideo() {
