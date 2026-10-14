@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LiteWallpaper — lightweight live wallpaper for macOS</title>
+<meta name="description" content="A tiny native macOS live-wallpaper player that pauses whenever nobody can see it.">
+<meta name="keywords" content="macOS live wallpaper, Mac 動態桌布, video wallpaper, 影片桌布, LiteWallpaper">
+<link rel="canonical" href="https://gary0302.github.io/LiteWallpaper/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://gary0302.github.io/LiteWallpaper/">
+<meta property="og:title" content="LiteWallpaper">
+<meta property="og:description" content="A tiny native macOS live-wallpaper player that pauses whenever nobody can see it.">
+<meta property="og:image" content="https://gary0302.github.io/LiteWallpaper/icon.png">
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "LiteWallpaper",
+  "alternateName": "LiteWallpaper 動態桌布",
+  "description": "A tiny native macOS live-wallpaper player that pauses whenever nobody can see it. 輕巧的 Mac 原生動態桌布。",
+  "operatingSystem": "macOS 13+",
+  "applicationCategory": "UtilitiesApplication",
+  "url": "https://gary0302.github.io/LiteWallpaper/",
+  "downloadUrl": "https://github.com/Gary0302/LiteWallpaper/releases/latest/download/LiteWallpaper.dmg",
+  "softwareVersion": "1.1",
+  "image": "https://gary0302.github.io/LiteWallpaper/icon.png",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+<style>
+  :root {
+    --bg: #0b0d12; --card: #151821; --border: #262a36; --text: #e8eaf0; --muted: #9aa0b0;
+    --accent: #7aa2ff; --accent-2: #b38bff;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg: #f6f7fb; --card: #fff; --border: #e3e6ee; --text: #161922; --muted: #5b6273; --accent: #3d6bff; --accent-2: #8a4dff; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text); line-height: 1.6;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang TC", "Helvetica Neue", sans-serif;
+  }
+  .glow {
+    position: fixed; inset: -30vh -20vw auto; height: 80vh; z-index: -1; pointer-events: none;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 25%, transparent), transparent),
+                radial-gradient(closest-side at 70% 40%, color-mix(in srgb, var(--accent-2) 20%, transparent), transparent);
+    filter: blur(40px);
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 20px 64px; }
+  nav { display: flex; justify-content: flex-end; gap: 8px; }
+  .lang button {
+    background: transparent; color: var(--muted); border: 1px solid var(--border);
+    padding: 4px 10px; border-radius: 999px; cursor: pointer; font: inherit; font-size: 13px;
+  }
+  .lang button[aria-pressed="true"] { color: var(--text); border-color: var(--accent); }
+  header { text-align: center; padding: 48px 0 24px; }
+  header img { width: 128px; height: 128px; filter: drop-shadow(0 12px 32px rgba(0,0,0,.35)); }
+  h1 { font-size: clamp(36px, 6vw, 52px); margin: 16px 0 8px; letter-spacing: -0.02em; }
+  .tagline { color: var(--muted); font-size: 18px; margin: 0 auto; max-width: 520px; }
+  .meta { color: var(--muted); font-size: 13px; margin-top: 12px; }
+  .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 28px 0 8px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; border-radius: 12px;
+    text-decoration: none; font-weight: 600; border: 1px solid var(--border); color: var(--text); background: var(--card);
+  }
+  .btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; border: none; }
+  .btn:hover { filter: brightness(1.08); }
+  section { margin-top: 48px; }
+  h2 { font-size: 22px; margin: 0 0 16px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+  .cmd { display: flex; align-items: center; gap: 12px; }
+  .cmd code {
+    flex: 1; overflow-x: auto; white-space: nowrap; font: 14px/1.5 ui-monospace, "SF Mono", Menlo, monospace;
+    padding: 12px 14px; background: color-mix(in srgb, var(--bg) 70%, transparent); border-radius: 10px;
+  }
+  .cmd button {
+    font: inherit; font-size: 14px; padding: 10px 14px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--border); background: transparent; color: var(--text); white-space: nowrap;
+  }
+  .note { color: var(--muted); font-size: 14px; margin: 12px 0 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .grid .card h3 { margin: 0 0 6px; font-size: 16px; }
+  .grid .card p { margin: 0; color: var(--muted); font-size: 14px; }
+  ol { padding-left: 20px; margin: 0; }
+  ol li + li { margin-top: 6px; }
+  footer { margin-top: 64px; text-align: center; color: var(--muted); font-size: 13px; }
+  footer a, .note a { color: var(--accent); }
+  [data-zh] { display: none; }
+  html[lang="zh-Hant"] [data-en] { display: none; }
+  html[lang="zh-Hant"] [data-zh] { display: revert; }
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<main>
+  <nav class="lang" aria-label="Language">
+    <button type="button" data-set-lang="en">English</button>
+    <button type="button" data-set-lang="zh-Hant">繁體中文</button>
+  </nav>
+
+  <header>
+    <img src="icon.png" alt="LiteWallpaper icon">
+    <h1>LiteWallpaper</h1>
+    <p class="tagline">
+      <span data-en>A tiny, native live wallpaper for your Mac — and it stops when nobody's looking.</span>
+      <span data-zh>輕巧的 Mac 原生動態桌布，看不到的時候自動暫停，不浪費電。</span>
+    </p>
+    <p class="meta">
+      <span data-en>Free · macOS 13+ · Apple Silicon &amp; Intel</span>
+      <span data-zh>免費 · macOS 13 以上 · 支援 Apple Silicon 與 Intel</span>
+    </p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/Gary0302/LiteWallpaper/releases/latest/download/LiteWallpaper.dmg">
+        <span data-en>Download .dmg</span><span data-zh>下載 .dmg</span>
+      </a>
+      <a class="btn" href="https://github.com/Gary0302/LiteWallpaper">GitHub</a>
+    </div>
+  </header>
+
+  <section>
+    <h2><span data-en>Install in one line</span><span data-zh>一行指令安裝</span></h2>
+    <div class="card">
+      <div class="cmd">
+        <code id="cmd">curl -fsSL https://raw.githubusercontent.com/Gary0302/LiteWallpaper/main/install.sh | zsh</code>
+        <button type="button" id="copy"><span data-en>Copy</span><span data-zh>複製</span></button>
+      </div>
+      <p class="note">
+        <span data-en>Paste into Terminal. It downloads the latest version, installs it to Applications, and opens it — no security prompt.</span>
+        <span data-zh>貼到「終端機」執行即可。會下載最新版、安裝到「應用程式」並自動開啟，不會跳出安全性警告。</span>
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2><span data-en>Or use the DMG</span><span data-zh>或使用 DMG 安裝</span></h2>
+    <div class="card">
+      <ol data-en>
+        <li>Download <b>LiteWallpaper.dmg</b> and drag the app into <b>Applications</b>.</li>
+        <li>The first time, macOS blocks it because it isn't from the App Store. Right-click the app → <b>Open</b>.</li>
+        <li>On macOS 15 or later: try to open it once, then go to <b>System Settings → Privacy &amp; Security</b> and click <b>Open Anyway</b>.</li>
+      </ol>
+      <ol data-zh>
+        <li>下載 <b>LiteWallpaper.dmg</b>，把 App 拖進「<b>應用程式</b>」。</li>
+        <li>第一次開啟時 macOS 會阻擋（非 App Store 下載）。對 App 按右鍵 →「<b>打開</b>」。</li>
+        <li>macOS 15 以上：先嘗試開啟一次，再到「<b>系統設定 → 隱私權與安全性</b>」按「<b>強制打開</b>」。</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2><span data-en>Why it's light</span><span data-zh>為什麼這麼省電</span></h2>
+    <div class="grid">
+      <div class="card">
+        <h3><span data-en>Pauses when hidden</span><span data-zh>被遮住就暫停</span></h3>
+        <p><span data-en>Windows covering the desktop or a full-screen app? Playback stops.</span><span data-zh>視窗蓋滿桌面或開啟全螢幕 App 時自動停止播放。</span></p>
+      </div>
+      <div class="card">
+        <h3><span data-en>Respects your battery</span><span data-zh>顧及電池</span></h3>
+        <p><span data-en>Pauses in Low Power Mode, on battery (optional), and when the screen is locked or asleep.</span><span data-zh>低耗電模式、使用電池時（可選）、螢幕鎖定或休眠時都會暫停。</span></p>
+      </div>
+      <div class="card">
+        <h3><span data-en>One decoder, every screen</span><span data-zh>多螢幕只解碼一次</span></h3>
+        <p><span data-en>A single shared player drives all displays, so extra monitors cost almost nothing.</span><span data-zh>所有螢幕共用一個播放器，多接螢幕幾乎不增加負擔。</span></p>
+      </div>
+      <div class="card">
+        <h3><span data-en>Tiny &amp; native</span><span data-zh>小巧原生</span></h3>
+        <p><span data-en>About 200 lines of Swift, under 1 MB, no dependencies. Lives in your menu bar.</span><span data-zh>約 200 行 Swift、不到 1 MB、無任何依賴，住在選單列。</span></p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span data-en>How to use</span><span data-zh>使用方式</span></h2>
+    <div class="card">
+      <ol data-en>
+        <li>Click the monitor icon in the menu bar → <b>Choose Video…</b> and pick any video file.</li>
+        <li>From the same menu: pause/play, pause on battery, launch at login, and switch <b>Language</b> (English / 繁體中文).</li>
+      </ol>
+      <ol data-zh>
+        <li>點選單列的螢幕圖示 →「<b>選擇影片…</b>」，挑一部影片。</li>
+        <li>同一個選單可以暫停/播放、設定用電池時暫停、開機時啟動，以及切換「<b>語言</b>」（English / 繁體中文）。</li>
+      </ol>
+      <p class="note">
+        <span data-en>Tip: for the lowest CPU/GPU use, encode videos as HEVC at your screen's resolution and ≤30 fps.</span>
+        <span data-zh>小技巧：影片轉成 HEVC、解析度與螢幕相同、30 fps 以下最省資源。</span>
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    <a href="https://github.com/Gary0302/LiteWallpaper">github.com/Gary0302/LiteWallpaper</a>
+  </footer>
+</main>
+<script>
+  const root = document.documentElement;
+  function setLang(lang) {
+    root.lang = lang;
+    localStorage.setItem("lang", lang);
+    document.querySelectorAll("[data-set-lang]").forEach(b => b.setAttribute("aria-pressed", b.dataset.setLang === lang));
+  }
+  document.querySelectorAll("[data-set-lang]").forEach(b => b.addEventListener("click", () => setLang(b.dataset.setLang)));
+  setLang(localStorage.getItem("lang") || (navigator.language.startsWith("zh") ? "zh-Hant" : "en"));
+
+  document.getElementById("copy").addEventListener("click", async e => {
+    await navigator.clipboard.writeText(document.getElementById("cmd").textContent);
+    const btn = e.currentTarget, old = btn.innerHTML;
+    btn.textContent = root.lang === "en" ? "Copied ✓" : "已複製 ✓";
+    setTimeout(() => (btn.innerHTML = old), 1500);
+  });
+</script>
+</body>
+</html>

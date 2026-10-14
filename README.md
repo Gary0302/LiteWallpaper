@@ -1,5 +1,7 @@
 # LiteWallpaper
 
+**English** | [繁體中文](README.zh-TW.md) · [Website](https://gary0302.github.io/LiteWallpaper/)
+
 A tiny native macOS live-wallpaper player (~200 lines of Swift, no dependencies).
 
 It plays a looping, muted video behind your desktop icons and **pauses automatically whenever nobody can see it**:
